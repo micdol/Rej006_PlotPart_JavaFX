@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<TitledPane fx:id="tpRoot" alignment="CENTER_RIGHT" animated="false" contentDisplay="RIGHT" graphicTextGap="10.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" stylesheets="@../style/cursor-view-style.css" text="Nazwa" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.CursorViewController">
+    <content>
+        <GridPane>
+            <columnConstraints>
+                <ColumnConstraints hgrow="NEVER" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints minHeight="10.0" vgrow="NEVER" />
+                <RowConstraints minHeight="10.0" vgrow="NEVER" />
+                <RowConstraints minHeight="10.0" vgrow="NEVER" />
+                <RowConstraints minHeight="10.0" vgrow="NEVER" />
+            </rowConstraints>
+            <children>
+                <Label text="Pozycja" GridPane.hgrow="NEVER" GridPane.vgrow="NEVER">
+                    <GridPane.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                    </GridPane.margin>
+                </Label>
+                <Label text="Referencja" GridPane.hgrow="NEVER" GridPane.rowIndex="1" GridPane.vgrow="NEVER">
+                    <GridPane.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                    </GridPane.margin>
+                </Label>
+                <Label text="Delta" GridPane.hgrow="NEVER" GridPane.rowIndex="2" GridPane.vgrow="NEVER">
+                    <GridPane.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                    </GridPane.margin>
+                </Label>
+                <Button fx:id="btnColor" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onColorClicked" GridPane.columnIndex="1" GridPane.rowIndex="3" GridPane.vgrow="NEVER">
+                    <GridPane.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                    </GridPane.margin>
+                </Button>
+                <HBox GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.vgrow="NEVER">
+                    <GridPane.margin>
+                        <Insets />
+                    </GridPane.margin>
+                    <children>
+                        <ComboBox fx:id="cbReference" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
+                            <HBox.margin>
+                                <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                            </HBox.margin>
+                        </ComboBox>
+                        <Button fx:id="btnClearReference" mnemonicParsing="false" onAction="#onClearReferenceClicked" text="X" HBox.hgrow="NEVER">
+                            <HBox.margin>
+                                <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                            </HBox.margin>
+                        </Button>
+                    </children>
+                </HBox>
+                <Spinner fx:id="spPosition" editable="true" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1">
+                    <GridPane.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                    </GridPane.margin>
+                </Spinner>
+                <Spinner fx:id="spDelta" editable="true" maxWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <GridPane.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                    </GridPane.margin>
+                </Spinner>
+            <Label text="Kolor" GridPane.hgrow="NEVER" GridPane.rowIndex="3" GridPane.vgrow="NEVER">
+               <GridPane.margin>
+                  <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+               </GridPane.margin>
+            </Label>
+            </children>
+        </GridPane>
+    </content>
+    <graphic>
+        <Button fx:id="btnDelete" alignment="CENTER_RIGHT" mnemonicParsing="false" onAction="#onDeleteClicked" text="X" />
+    </graphic>
+</TitledPane>

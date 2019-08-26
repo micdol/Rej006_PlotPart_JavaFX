@@ -1,0 +1,11 @@
+/*
+https://stackoverflow.com/questions/21451386/titled-pane-css-settings
+*/
+.titled-pane > .title {
+    -fx-padding: 4px 6px;
+
+}
+
+.titled-pane > .content > * {
+    -fx-padding: 3px;
+}

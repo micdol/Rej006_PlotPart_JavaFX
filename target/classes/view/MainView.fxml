@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<?import util.ExtendedLineChart?>
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.MainViewController">
+    <top>
+      <HBox spacing="5.0" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets left="5.0" right="5.0" top="5.0" />
+         </BorderPane.margin>
+         <children>
+              <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onAddClicked" text="ADD" />
+            <Button fx:id="btnStart" mnemonicParsing="false" onAction="#onStartClicked" text="Start" />
+            <Button fx:id="btnStop" mnemonicParsing="false" onAction="#onStopClicked" text="Stop" />
+         </children>
+      </HBox>
+    </top>
+    <right>
+        <VBox fx:id="vbCursors" maxWidth="1.7976931348623157E308" minWidth="144.0" spacing="5.0" BorderPane.alignment="CENTER">
+            <BorderPane.margin>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </BorderPane.margin>
+        </VBox>
+    </right>
+    <center>
+        <ExtendedLineChart fx:id="chart" BorderPane.alignment="CENTER" animated="false" createSymbols="false">
+            <xAxis>
+                <NumberAxis animated="false" side="BOTTOM" upperBound="10" />
+            </xAxis>
+            <yAxis>
+                <NumberAxis animated="false" side="LEFT" />
+            </yAxis>
+        </ExtendedLineChart>
+    </center>
+</BorderPane>
