@@ -8,8 +8,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<?import util.ExtendedLineChart?>
-<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.MainViewController">
+<?import plot.ExtendedLineChart?>
+<?import plot.ExtendedNumberAxis?>
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.MainViewController">
     <top>
       <HBox spacing="5.0" BorderPane.alignment="CENTER">
          <BorderPane.margin>
@@ -19,6 +20,8 @@
               <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onAddClicked" text="ADD" />
             <Button fx:id="btnStart" mnemonicParsing="false" onAction="#onStartClicked" text="Start" />
             <Button fx:id="btnStop" mnemonicParsing="false" onAction="#onStopClicked" text="Stop" />
+             <Button fx:id="btnResetZoom" mnemonicParsing="false" onAction="#onResetZoomClicked" text="Reset zoom" />
+
          </children>
       </HBox>
     </top>
@@ -32,10 +35,10 @@
     <center>
         <ExtendedLineChart fx:id="chart" BorderPane.alignment="CENTER" animated="false" createSymbols="false">
             <xAxis>
-                <NumberAxis animated="false" side="BOTTOM" upperBound="10" />
+                <ExtendedNumberAxis animated="false" side="BOTTOM" autoRanging="false"/>
             </xAxis>
             <yAxis>
-                <NumberAxis animated="false" side="LEFT" />
+                <ExtendedNumberAxis animated="false" side="LEFT" autoRanging="false"/>
             </yAxis>
         </ExtendedLineChart>
     </center>

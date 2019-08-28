@@ -1,8 +1,5 @@
 package controllers;
 
-import java.net.URL;
-import java.util.ResourceBundle;
-
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -18,6 +15,9 @@ import util.CursorManager;
 import util.D;
 import util.NumberSpinnerValueFactory;
 import util.NumberStringConverter;
+
+import java.net.URL;
+import java.util.ResourceBundle;
 
 public class CursorViewController {
 
