@@ -10,9 +10,9 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import model.CursorModel;
+import plot.ExtendedLineChart;
 import util.CursorManager;
 import util.D;
-import util.ExtendedLineChart;
 import util.SignalGenerator;
 
 import java.io.IOException;
@@ -71,6 +71,8 @@ public class MainViewController {
             generator.getData().addListener((InvalidationListener) il -> series.getData().addAll(generator.getData()));
             generators.add(generator);
         }
+
+        onResetZoomClicked(null);
         D.info(MainViewController.this, "Initialized");
     }
 
@@ -106,4 +108,8 @@ public class MainViewController {
         generators.forEach(SignalGenerator::stop);
     }
 
+    public void onResetZoomClicked(ActionEvent event) {
+        chart.getXAxis().resetZoom();
+        chart.getYAxis().resetZoom();
+    }
 }
