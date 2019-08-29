@@ -9,6 +9,7 @@
 
 <?import plot.ExtendedNumberAxis?>
 <?import plot.ExtendedLineChart?>
+<?import javafx.scene.control.ProgressBar?>
 <BorderPane fx:id="root" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="controllers.MainViewController">
     <top>
@@ -21,7 +22,9 @@
                 <Button fx:id="btnStart" mnemonicParsing="false" onAction="#onStartClicked" text="Start"/>
                 <Button fx:id="btnStop" mnemonicParsing="false" onAction="#onStopClicked" text="Stop"/>
                 <Button fx:id="btnResetZoom" mnemonicParsing="false" onAction="#onResetZoomClicked" text="Reset zoom"/>
+                <Button fx:id="btnResetData" mnemonicParsing="false" onAction="#onResetDataClicked" text="Reset data"/>
                 <ComboBox fx:id="cbPlotMode" prefWidth="150.0"/>
+                <ProgressBar fx:id="prgBufferFill" progress="0"/>
 
             </children>
         </HBox>
@@ -34,7 +37,7 @@
             </BorderPane.margin>
         </VBox>
     </right>
-    <!--
+    <!-- Scene Builder does not like these Extended classes
     <center>
         <ExtendedLineChart fx:id="chart" BorderPane.alignment="CENTER" animated="false" createSymbols="false">
             <xAxis>

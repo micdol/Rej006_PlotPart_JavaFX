@@ -1,24 +1,29 @@
 package controllers;
 
-import javafx.beans.InvalidationListener;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import model.CursorModel;
+import plot.BufferModeModel;
 import plot.ExtendedLineChart;
+import plot.PlotMode;
 import util.CursorManager;
 import util.D;
-import util.SignalGenerator;
+import util.SineSignalGenerator;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 public class MainViewController {
@@ -30,6 +35,12 @@ public class MainViewController {
     private VBox vbCursors;
 
     @FXML
+    private ProgressBar prgBufferFill;
+
+    @FXML
+    private ComboBox<PlotMode> cbPlotMode;
+
+    @FXML
     private ExtendedLineChart chart;
 
     /**
@@ -37,7 +48,7 @@ public class MainViewController {
      */
     private final List<CursorViewController> cursors;
 
-    private final List<SignalGenerator> generators;
+    private final List<SineSignalGenerator> generators;
 
     public MainViewController() {
         cursors = new ArrayList<>();
@@ -47,6 +58,18 @@ public class MainViewController {
     @FXML
     void initialize() {
         D.info(MainViewController.this, "Initializing");
+
+        cbPlotMode.getItems().setAll(PlotMode.values());
+        cbPlotMode.getSelectionModel().select(chart.getPlotMode());
+        chart.plotModeProperty().bind(cbPlotMode.getSelectionModel().selectedItemProperty());
+        chart.plotModelProperty().addListener((o, ov, nv) -> {
+            if (nv instanceof BufferModeModel) {
+                prgBufferFill.progressProperty().bind(((BufferModeModel) nv).bufferFillProperty());
+            } else {
+                prgBufferFill.progressProperty().unbind();
+            }
+        });
+        chart.setPlotModel(new BufferModeModel(chart));
 
         // Monitor available cursors for deletion
         CursorManager.getInstance()
@@ -63,16 +86,30 @@ public class MainViewController {
                 });
 
         // Data generation
-        for (int i = 0; i < 6; i++) {
-            SignalGenerator generator = new SignalGenerator();
-            generator.setGenerationInterval(new Random().nextInt(100) + 10);
-            XYChart.Series<Number, Number> series = new XYChart.Series<>();
-            chart.getData().add(series);
-            generator.getData().addListener((InvalidationListener) il -> series.getData().addAll(generator.getData()));
-            generators.add(generator);
-        }
+        SineSignalGenerator generator = new SineSignalGenerator();
 
-        onResetZoomClicked(null);
+        generator.deltaProperty().addListener((o, ov, nv) -> chart.getPlotModel().setDelta(nv.doubleValue() / 1000.0));
+        generator.numberOfSeriesProperty().addListener((o, ov, nv) -> {
+            final ObservableList<XYChart.Series<Number, Number>> chartSeries = chart.getData();
+            chartSeries.clear();
+            for (int i = 0; i < nv.intValue(); i++) {
+                chartSeries.add(new XYChart.Series<>());
+            }
+        });
+
+        generator.setDelta(21);
+        generator.setUpdateInterval(37);
+        generator.setNumberOfSeries(5);
+        generator.setPeriod(1337);
+        generator.dataReadyProperty().addListener((o, wasReady, isReady) -> {
+            if (isReady) {
+                Platform.runLater(() -> chart.getPlotModel().addData(generator.getData()));
+            }
+        });
+        generators.add(generator);
+
+
+        Platform.runLater(() -> onResetZoomClicked(null));
         D.info(MainViewController.this, "Initialized");
     }
 
@@ -100,16 +137,19 @@ public class MainViewController {
 
     @FXML
     void onStartClicked(ActionEvent e) {
-        generators.forEach(SignalGenerator::start);
+        generators.forEach(SineSignalGenerator::start);
     }
 
     @FXML
     void onStopClicked(ActionEvent e) {
-        generators.forEach(SignalGenerator::stop);
+        generators.forEach(SineSignalGenerator::stop);
     }
 
     public void onResetZoomClicked(ActionEvent event) {
         chart.getXAxis().resetZoom();
         chart.getYAxis().resetZoom();
+    }
+    public void onResetDataClicked(ActionEvent event) {
+        chart.getPlotModel().reset();
     }
 }

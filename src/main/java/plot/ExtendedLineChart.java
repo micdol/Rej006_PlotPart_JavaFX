@@ -29,7 +29,8 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     private final BooleanProperty zoomOutModifierDown;
     private final SimpleObjectProperty<MouseButton> panButton;
     private final BooleanProperty panning;
-    private final ObjectProperty<PlotMode> mode;
+    private final ObjectProperty<PlotMode> plotMode;
+    private final ObjectProperty<PlotModeModelBase> plotModel;
 
     private static class Pt {
         double x;
@@ -65,8 +66,11 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     public ReadOnlyBooleanProperty panningProperty() {
         return panning;
     }
-    public ObjectProperty<PlotMode> modeProperty() {
-        return mode;
+    public ObjectProperty<PlotMode> plotModeProperty() {
+        return plotMode;
+    }
+    public ObjectProperty<PlotModeModelBase> plotModelProperty() {
+        return plotModel;
     }
 
     public Rectangle getZoomRect() {
@@ -102,8 +106,11 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     public boolean isPanning() {
         return panning.get();
     }
-    public PlotMode getMode() {
-        return mode.get();
+    public PlotMode getPlotMode() {
+        return plotMode.get();
+    }
+    public PlotModeModelBase getPlotModel() {
+        return plotModel.get();
     }
 
     private void setZoomRect(double x, double y, double w, double h) {
@@ -137,8 +144,11 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     private void setPanning(boolean panning) {
         this.panning.set(panning);
     }
-    public void setMode(PlotMode mode) {
-        this.mode.set(mode);
+    public void setPlotMode(PlotMode plotMode) {
+        this.plotMode.set(plotMode);
+    }
+    public void setPlotModel(PlotModeModelBase plotModel) {
+        this.plotModel.set(plotModel);
     }
 
     // endregion
@@ -155,14 +165,16 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
         zoomOutModifierDown = new SimpleBooleanProperty(false);
         panButton = new SimpleObjectProperty<>(MouseButton.MIDDLE);
         panning = new SimpleBooleanProperty(false);
-        mode = new SimpleObjectProperty<>(PlotMode.FREE);
+        plotMode = new SimpleObjectProperty<>(PlotMode.BUFFER);
+        plotModel = new SimpleObjectProperty<>(null);
 
         setAnimated(false);
+        setLegendVisible(false);
 
         xAxis.setMinorTickVisible(false);
         xAxis.setAnimated(false);
         xAxis.setAutoRanging(false);
-        xAxis.setUpperBound(10);
+        xAxis.setUpperBound(5);
 
         yAxis.setMinorTickVisible(false);
         yAxis.setAnimated(false);
@@ -170,11 +182,20 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
         yAxis.setUpperBound(10);
         yAxis.setLowerBound(-10);
 
+        setupPlotModes();
         setupZooming();
         setupPanning();
         setupCursors();
         setupMouseCursors();
     }
+
+    // region Plot Modes
+
+    private void setupPlotModes() {
+
+    }
+
+    // endregion
 
     // region Cursors
 

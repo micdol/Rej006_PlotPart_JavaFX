@@ -1,5 +1,7 @@
 package plot;
 
+import javafx.beans.value.ObservableValue;
+
 public enum PlotMode {
     /**
      * All options enabled, no fancy scaling, animating

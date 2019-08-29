@@ -217,7 +217,7 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
     }
 
     public void resetZoom() {
-        setRange(new Range(getSide().isHorizontal() ? 0 : -10, 10), false);
+        setRange(new Range(getSide().isHorizontal() ? 0 : -5, 5), false);
     }
 
     /**
