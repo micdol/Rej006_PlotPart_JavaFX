@@ -2,10 +2,14 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.layout.*?>
-<?import plot.ExtendedLineChart?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
 <?import plot.ExtendedNumberAxis?>
-<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1"
+<?import plot.ExtendedLineChart?>
+<BorderPane fx:id="root" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="controllers.MainViewController">
     <top>
         <HBox spacing="5.0" BorderPane.alignment="CENTER">
@@ -17,6 +21,7 @@
                 <Button fx:id="btnStart" mnemonicParsing="false" onAction="#onStartClicked" text="Start"/>
                 <Button fx:id="btnStop" mnemonicParsing="false" onAction="#onStopClicked" text="Stop"/>
                 <Button fx:id="btnResetZoom" mnemonicParsing="false" onAction="#onResetZoomClicked" text="Reset zoom"/>
+                <ComboBox fx:id="cbPlotMode" prefWidth="150.0"/>
 
             </children>
         </HBox>
@@ -29,6 +34,18 @@
             </BorderPane.margin>
         </VBox>
     </right>
+    <!--
+    <center>
+        <ExtendedLineChart fx:id="chart" BorderPane.alignment="CENTER" animated="false" createSymbols="false">
+            <xAxis>
+                <ExtendedNumberAxis animated="false" side="BOTTOM" autoRanging="false"/>
+            </xAxis>
+            <yAxis>
+                <ExtendedNumberAxis animated="false" side="LEFT" autoRanging="false"/>
+            </yAxis>
+        </ExtendedLineChart>
+        </center>
+    </center-->
     <center>
         <ExtendedLineChart fx:id="chart" BorderPane.alignment="CENTER" animated="false" createSymbols="false">
             <xAxis>

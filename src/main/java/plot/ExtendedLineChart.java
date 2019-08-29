@@ -5,9 +5,12 @@ import javafx.application.Platform;
 import javafx.beans.NamedArg;
 import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
+import javafx.scene.Cursor;
+import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.ValueAxis;
+import javafx.scene.image.Image;
 import javafx.scene.input.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -17,23 +20,149 @@ import util.D;
 
 public class ExtendedLineChart extends LineChart<Number, Number> {
 
+    private final SimpleObjectProperty<Rectangle> zoomRect;
+    private final SimpleBooleanProperty rectZooming;
+    private final ObjectProperty<MouseButton> zoomRectButton;
+    private final ObjectProperty<KeyCode> zoomInModifier;
+    private final ObjectProperty<KeyCode> zoomOutModifier;
+    private final BooleanProperty zoomInModifierDown;
+    private final BooleanProperty zoomOutModifierDown;
+    private final SimpleObjectProperty<MouseButton> panButton;
+    private final BooleanProperty panning;
+    private final ObjectProperty<PlotMode> mode;
+
+    private static class Pt {
+        double x;
+        double y;
+    }
+
+    // region Properties
+
+    public ReadOnlyObjectProperty<Rectangle> zoomRectProperty() {
+        return zoomRect;
+    }
+    public ReadOnlyBooleanProperty rectZoomingProperty() {
+        return rectZooming;
+    }
+    public ObjectProperty<MouseButton> zoomRectButtonProperty() {
+        return zoomRectButton;
+    }
+    public ObjectProperty<KeyCode> zoomInModifierProperty() {
+        return zoomInModifier;
+    }
+    public ObjectProperty<KeyCode> zoomOutModifierProperty() {
+        return zoomOutModifier;
+    }
+    public ReadOnlyBooleanProperty zoomInModifierDownProperty() {
+        return zoomInModifierDown;
+    }
+    public ReadOnlyBooleanProperty zoomOutModifierDownProperty() {
+        return zoomOutModifierDown;
+    }
+    public SimpleObjectProperty<MouseButton> panButtonProperty() {
+        return panButton;
+    }
+    public ReadOnlyBooleanProperty panningProperty() {
+        return panning;
+    }
+    public ObjectProperty<PlotMode> modeProperty() {
+        return mode;
+    }
+
+    public Rectangle getZoomRect() {
+        return zoomRect.get();
+    }
+    public boolean isRectZooming() {
+        return rectZooming.get();
+    }
+    public MouseButton getZoomRectButton() {
+        return zoomRectButton.get();
+    }
+    public KeyCode getZoomInModifier() {
+        return zoomInModifier.get();
+    }
+    public KeyCode getZoomOutModifier() {
+        return zoomOutModifier.get();
+    }
+    public double getZoomOutScale() {
+        return 1.5;
+    }
+    public double getZoomInScale() {
+        return 1.0 / getZoomOutScale();
+    }
+    public boolean isZoomInModifierDown() {
+        return zoomInModifierDown.get();
+    }
+    public boolean isZoomOutModifierDown() {
+        return zoomOutModifierDown.get();
+    }
+    public MouseButton getPanButton() {
+        return panButton.get();
+    }
+    public boolean isPanning() {
+        return panning.get();
+    }
+    public PlotMode getMode() {
+        return mode.get();
+    }
+
+    private void setZoomRect(double x, double y, double w, double h) {
+        Rectangle zoomRect = getZoomRect();
+        zoomRect.setX(x);
+        zoomRect.setY(y);
+        zoomRect.setWidth(w);
+        zoomRect.setHeight(h);
+    }
+    private void setRectZooming(boolean isRectZooming) {
+        rectZooming.set(isRectZooming);
+    }
+    public void setZoomRectButton(MouseButton zoomRectButton) {
+        this.zoomRectButton.set(zoomRectButton);
+    }
+    public void setZoomInModifier(KeyCode zoomInModifier) {
+        this.zoomInModifier.set(zoomInModifier);
+    }
+    public void setZoomOutModifier(KeyCode zoomOutModifier) {
+        this.zoomOutModifier.set(zoomOutModifier);
+    }
+    private void setZoomInModifierDown(boolean zoomInModifierDown) {
+        this.zoomInModifierDown.set(zoomInModifierDown);
+    }
+    private void setZoomOutModifierDown(boolean zoomOutModifierDown) {
+        this.zoomOutModifierDown.set(zoomOutModifierDown);
+    }
+    public void setPanButton(MouseButton panButton) {
+        this.panButton.set(panButton);
+    }
+    private void setPanning(boolean panning) {
+        this.panning.set(panning);
+    }
+    public void setMode(PlotMode mode) {
+        this.mode.set(mode);
+    }
+
+    // endregion
+
     public ExtendedLineChart(@NamedArg("xAxis") ValueAxis<Number> xAxis, @NamedArg("yAxis") ValueAxis<Number> yAxis) {
         super(xAxis, yAxis);
 
-        zoomRectWrapper = new ReadOnlyObjectWrapper<>(new Rectangle(0, 0, new Color(0, 1, 0, 0.5)));
-        zoomRect = zoomRectWrapper.getReadOnlyProperty();
-        rectZoomingWrapper = new ReadOnlyBooleanWrapper(false);
-        rectZooming = rectZoomingWrapper.getReadOnlyProperty();
+        zoomRect = new SimpleObjectProperty<>(new Rectangle(0, 0, new Color(0, 1, 0, 0.5)));
+        rectZooming = new SimpleBooleanProperty(false);
         zoomRectButton = new SimpleObjectProperty<>(MouseButton.PRIMARY);
         zoomInModifier = new SimpleObjectProperty<>(KeyCode.CONTROL);
         zoomOutModifier = new SimpleObjectProperty<>(KeyCode.ALT);
+        zoomInModifierDown = new SimpleBooleanProperty(false);
+        zoomOutModifierDown = new SimpleBooleanProperty(false);
+        panButton = new SimpleObjectProperty<>(MouseButton.MIDDLE);
+        panning = new SimpleBooleanProperty(false);
+        mode = new SimpleObjectProperty<>(PlotMode.FREE);
 
         setAnimated(false);
 
         xAxis.setMinorTickVisible(false);
         xAxis.setAnimated(false);
         xAxis.setAutoRanging(false);
-        xAxis.setUpperBound(30);
+        xAxis.setUpperBound(10);
 
         yAxis.setMinorTickVisible(false);
         yAxis.setAnimated(false);
@@ -42,7 +171,9 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
         yAxis.setLowerBound(-10);
 
         setupZooming();
+        setupPanning();
         setupCursors();
+        setupMouseCursors();
     }
 
     // region Cursors
@@ -86,78 +217,55 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
 
     // endregion
 
-    // region Zooming
+    // region  Mouse Cursors
 
-    private final ReadOnlyObjectProperty<Rectangle> zoomRect;
-    private final ReadOnlyObjectWrapper<Rectangle> zoomRectWrapper;
-    private final ReadOnlyBooleanProperty rectZooming;
-    private final ReadOnlyBooleanWrapper rectZoomingWrapper;
-    private final ObjectProperty<MouseButton> zoomRectButton;
-    private final ObjectProperty<KeyCode> zoomInModifier;
-    private final ObjectProperty<KeyCode> zoomOutModifier;
-    private boolean isZoomInModifierDown, isZoomOutModifierDown;
+    private void setupMouseCursors() {
+        final Cursor zoomInCursor = new ImageCursor(new Image("/images/zoom-in-rect-cursor.png"), 0, 0);
+        final Cursor zoomOutCursor = new ImageCursor(new Image("/images/zoom-out-rect-cursor.png"), 0, 0);
 
-    // region Properties
-
-    public ReadOnlyObjectProperty<Rectangle> zoomRectProperty() {
-        return zoomRect;
-    }
-    public ReadOnlyBooleanProperty rectZoomingProperty() {
-        return rectZooming;
-    }
-    public ObjectProperty<MouseButton> zoomRectButtonProperty() {
-        return zoomRectButton;
-    }
-    public ObjectProperty<KeyCode> zoomInModifierProperty() {
-        return zoomInModifier;
-    }
-    public ObjectProperty<KeyCode> zoomOutModifierProperty() {
-        return zoomOutModifier;
-    }
-
-    public Rectangle getZoomRect() {
-        return zoomRect.get();
-    }
-    public boolean isRectZooming() {
-        return rectZooming.get();
-    }
-    public MouseButton getZoomRectButton() {
-        return zoomRectButton.get();
-    }
-    public KeyCode getZoomInModifier() {
-        return zoomInModifier.get();
-    }
-    public KeyCode getZoomOutModifier() {
-        return zoomOutModifier.get();
-    }
-    public double getZoomOutScale() {
-        return 1.5;
-    }
-    public double getZoomInScale() {
-        return 1.0 / getZoomOutScale();
-    }
-
-    private void setZoomRect(double x, double y, double w, double h) {
-        Rectangle zoomRect = getZoomRect();
-        zoomRect.setX(x);
-        zoomRect.setY(y);
-        zoomRect.setWidth(w);
-        zoomRect.setHeight(h);
-    }
-    public void setRectZooming(boolean isRectZooming) {
-        rectZoomingWrapper.set(isRectZooming);
-    }
-    public void setZoomRectButton(MouseButton zoomRectButton) {
-        this.zoomRectButton.set(zoomRectButton);
-    }
-    public void setZoomInModifier(KeyCode zoomInModifier) {
-        this.zoomInModifier.set(zoomInModifier);
-    }
-    public void setZoomOutModifier(KeyCode zoomOutModifier) {
-        this.zoomOutModifier.set(zoomOutModifier);
+        zoomInModifierDown.addListener((o, ov, nv) -> setCursor(nv ? zoomInCursor : Cursor.DEFAULT));
+        zoomOutModifierDown.addListener((o, ov, nv) -> setCursor(nv ? zoomOutCursor : Cursor.DEFAULT));
+        panning.addListener((o, ov, nv) -> setCursor(nv ? Cursor.CLOSED_HAND : Cursor.DEFAULT));
     }
 
     // endregion
+
+    // region Panning
+
+    private final Pt panAnchor = new Pt();
+
+    private void setupPanning() {
+        addEventHandler(MouseEvent.MOUSE_PRESSED, this::onPanStart);
+        addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onPanDrag);
+        addEventHandler(MouseEvent.MOUSE_RELEASED, this::onPanEnd);
+        getXAxis().setPanEnable(true);
+        getYAxis().setPanEnable(true);
+    }
+    private void onPanStart(MouseEvent e) {
+        if (e.getButton() != getPanButton()) return;
+        setPanning(true);
+        panAnchor.x = e.getX();
+        panAnchor.y = e.getY();
+    }
+    private void onPanDrag(MouseEvent e) {
+        if (!isPanning()) return;
+        if (getXAxis().onPan(panAnchor.x, e.getX())) {
+            panAnchor.x = e.getX();
+        }
+        if (getYAxis().onPan(panAnchor.y, e.getY())) {
+            panAnchor.y = e.getY();
+        }
+    }
+    private void onPanEnd(MouseEvent e) {
+        if (!isPanning()) return;
+        getXAxis().onPan(panAnchor.x, e.getX());
+        getYAxis().onPan(panAnchor.y, e.getY());
+        setPanning(false);
+        panAnchor.x = panAnchor.y = 0;
+    }
+    // endregion
+
+    // region Zooming
 
     private void setupZooming() {
         Platform.runLater(() -> {
@@ -172,33 +280,28 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
             cpb.addEventHandler(ScrollEvent.SCROLL, this::onZoomScroll);
 
             getScene().addEventHandler(KeyEvent.KEY_PRESSED, e -> {
-                isZoomInModifierDown = e.getCode() == getZoomInModifier();
-                isZoomOutModifierDown = e.getCode() == getZoomOutModifier();
-                D.info(ExtendedLineChart.this, "Key pressed, zoom in modifier: " + isZoomInModifierDown + ", zoom out modifier: " + zoomOutModifier);
+                setZoomInModifierDown(e.getCode() == getZoomInModifier());
+                setZoomOutModifierDown(e.getCode() == getZoomOutModifier());
+                D.info(ExtendedLineChart.this, "Key pressed, zoom in modifier: " + isZoomInModifierDown() + ", zoom out modifier: " + zoomOutModifier);
             });
             getScene().addEventHandler(KeyEvent.KEY_RELEASED, e -> {
-                isZoomInModifierDown = (e.getCode() == getZoomInModifier()) != isZoomInModifierDown;
-                isZoomOutModifierDown = (e.getCode() == getZoomOutModifier()) != isZoomOutModifierDown;
-                D.info(ExtendedLineChart.this, "Key released, zoom in modifier: " + isZoomInModifierDown + ", zoom out modifier: " + zoomOutModifier);
+                setZoomInModifierDown((e.getCode() == getZoomInModifier()) != isZoomInModifierDown());
+                setZoomOutModifierDown((e.getCode() == getZoomOutModifier()) != isZoomOutModifierDown());
+                D.info(ExtendedLineChart.this, "Key released, zoom in modifier: " + isZoomInModifierDown() + ", zoom out modifier: " + zoomOutModifier);
             });
 
             getPlotChildren().add(getZoomRect());
-            rectZoomingWrapper.bindBidirectional(getZoomRect().visibleProperty());
+            rectZooming.bindBidirectional(getZoomRect().visibleProperty());
             setRectZooming(false);
 
             D.info(ExtendedLineChart.this, "Zooming set up");
         });
     }
 
-    private class Pt {
-        double x;
-        double y;
-    }
-
     private final Pt anchor = new Pt(), movable = new Pt(), topLeft = new Pt(), bottomRight = new Pt();
 
     private void onZoomRectStart(MouseEvent e) {
-        if (isZoomInModifierDown && !isRectZooming() && e.getButton() == getZoomRectButton()) {
+        if (isZoomInModifierDown() && !isRectZooming() && e.getButton() == getZoomRectButton()) {
             D.info(ExtendedLineChart.this, "Starting rect zoom @ [" + e.getX() + "," + e.getY() + "]");
             e.consume();
             Rectangle zoomRect = getZoomRect();
@@ -246,12 +349,12 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     }
     private void onZoomOutClick(MouseEvent e) {
         // Sometimes it seem like CTRL, ALT, SHIFT press is not previously detected
-        isZoomOutModifierDown = isZoomOutModifierDown ||
+        setZoomOutModifierDown(isZoomOutModifierDown() ||
                 (e.isControlDown() && getZoomOutModifier() == KeyCode.CONTROL) ||
                 (e.isAltDown() && getZoomOutModifier() == KeyCode.ALT) ||
-                (e.isShiftDown() && getZoomOutModifier() == KeyCode.SHIFT);
+                (e.isShiftDown() && getZoomOutModifier() == KeyCode.SHIFT));
 
-        if (isZoomOutModifierDown && e.getButton() == getZoomRectButton() && e.getClickCount() > 1) {
+        if (isZoomOutModifierDown() && e.getButton() == getZoomRectButton() && e.getClickCount() > 1) {
             e.consume();
             getXAxis().onZoomOut(e.getX());
             getYAxis().onZoomOut(e.getY());
@@ -259,12 +362,12 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     }
     private void onZoomInClick(MouseEvent e) {
         // Sometimes it seem like CTRL, ALT, SHIFT press is not previously detected
-        isZoomInModifierDown = isZoomInModifierDown ||
+        setZoomInModifierDown(isZoomInModifierDown() ||
                 (e.isControlDown() && getZoomInModifier() == KeyCode.CONTROL) ||
                 (e.isAltDown() && getZoomInModifier() == KeyCode.ALT) ||
-                (e.isShiftDown() && getZoomInModifier() == KeyCode.SHIFT);
+                (e.isShiftDown() && getZoomInModifier() == KeyCode.SHIFT));
 
-        if (isZoomInModifierDown && e.getButton() == getZoomRectButton() && e.getClickCount() > 1) {
+        if (isZoomInModifierDown() && e.getButton() == getZoomRectButton() && e.getClickCount() > 1) {
             e.consume();
             getXAxis().onZoomIn(e.getX());
             getYAxis().onZoomIn(e.getY());
@@ -272,7 +375,7 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     }
     private void onZoomScroll(ScrollEvent e) {
         // Noticed that for scrolling its more intuitive to have either of the modifiers down
-        if (isZoomInModifierDown || isZoomOutModifierDown) {
+        if (isZoomInModifierDown() || isZoomOutModifierDown()) {
             e.consume();
             if (e.getDeltaY() > 0) {
                 getXAxis().onZoomIn(e.getX());

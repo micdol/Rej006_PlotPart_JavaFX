@@ -81,7 +81,7 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
         this.panMouseButton.set(panMouseButton);
     }
     // Panning flag is managed internally, it would make no sense to make it editable from the outside
-    protected void setPanning(boolean panning) {
+    private void setPanning(boolean panning) {
         this.panning.set(panning);
     }
 
@@ -118,7 +118,7 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
     /**
      * Helper class to handle simple point related operations
      */
-    private class Pt {
+    private static class Pt {
         double x;
         double y;
     }
@@ -152,24 +152,47 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
     private void onPanDrag(MouseEvent e) {
         if (!isPanning()) return;
 
-        double panDeltaPx = getSide().isHorizontal() ? panAnchor.x - e.getX() : panAnchor.y - e.getY();
-        D.info(ExtendedNumberAxis.this, "Pan delta [px]: " + panDeltaPx);
-
-        if (Math.abs(panDeltaPx) < 3) return;
-        panAnchor.x = e.getX();
-        panAnchor.y = e.getY();
-        double panDelta = getValueForDisplay(panDeltaPx).doubleValue() - getValueForDisplay(0).doubleValue();
-        D.info(ExtendedNumberAxis.this, "Pan delta: " + panDelta);
-
-        setRange(new Range(getLowerBound() + panDelta, getUpperBound() + panDelta), false);
+        double startPx = getSide().isHorizontal() ? panAnchor.x : panAnchor.y;
+        double endPx = getSide().isHorizontal() ? e.getX() : e.getY();
+        if (onPan(startPx, endPx)) {
+            panAnchor.x = e.getX();
+            panAnchor.y = e.getY();
+        }
     }
     private void onPanEnd(MouseEvent e) {
         if (!isPanning()) return;
+
+        double startPx = getSide().isHorizontal() ? panAnchor.x : panAnchor.y;
+        double endPx = getSide().isHorizontal() ? e.getX() : e.getY();
+        onPan(startPx, endPx);
 
         D.info(ExtendedNumberAxis.this, "Pan ended");
 
         setPanning(false);
         panAnchor.x = panAnchor.y = 0;
+    }
+
+    /**
+     * Pans axis from startPx to endPx. Returns if pan indeed occurred (min pan threshold is 3px)
+     *
+     * @param startPx starting position in pixels
+     * @param endPx   end position in pixels
+     * @return true if pan was performed else false
+     */
+    public boolean onPan(double startPx, double endPx) {
+        if (!isPanEnable()) {
+            D.warn(ExtendedNumberAxis.this, "Pan is disabled");
+            return false;
+        }
+
+        double deltaPx = startPx - endPx;
+        D.info(ExtendedNumberAxis.this, "Pan delta [px]: " + deltaPx);
+        if (Math.abs(deltaPx) < 3) return false;
+
+        double delta = getValueForDisplay(startPx).doubleValue() - getValueForDisplay(endPx).doubleValue();
+        D.info(ExtendedNumberAxis.this, "Pan delta: " + delta);
+        setRange(new Range(getLowerBound() + delta, getUpperBound() + delta), false);
+        return true;
     }
     // endregion
 
