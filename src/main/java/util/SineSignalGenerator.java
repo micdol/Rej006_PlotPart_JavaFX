@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit;
 public class SineSignalGenerator {
 
     private static final double TWO_PI = Math.PI * 2.0;
+    private static final Random random = new Random(123L);
+    private static double noise(double magnitude) {
+        return random.nextDouble() * magnitude * 0.5;
+    }
 
     /**
      * Number of series to generate, first level of data
@@ -40,12 +44,13 @@ public class SineSignalGenerator {
      * data[numberOfSeries][numberOfDataPoints]
      * On each update contains NEW data
      */
-    private double[][] data;
-    private List<List<Double>> buffer;
+    private final List<List<Double>> data;
+    private final List<List<Double>> buffer;
+    /**
+     * These two are only for debugging/logging purposes
+     */
     private long dataIdx, bufferIdx;
-    private final Random random;
 
-    private final ThreadFactory daemonFactory = new DaemonThreadFactory();
     private ScheduledExecutorService updateExecutor;
     private ScheduledExecutorService generateExecutor;
 
@@ -82,7 +87,7 @@ public class SineSignalGenerator {
     public long getUpdateInterval() {
         return updateInterval.get();
     }
-    public synchronized double[][] getData() {
+    public synchronized List<List<Double>> getData() {
         return data;
     }
     public boolean isRunning() {
@@ -132,7 +137,8 @@ public class SineSignalGenerator {
         }
         this.period.set(period_ms);
     }
-    // region Properties
+
+    // endregion Properties
 
     public SineSignalGenerator() {
         numberOfSeries = new SimpleIntegerProperty(0);
@@ -140,8 +146,8 @@ public class SineSignalGenerator {
         delta = new SimpleLongProperty(1L);
         updateInterval = new SimpleLongProperty(1L);
         running = new SimpleBooleanProperty(false);
-        random = new Random(123L);
         buffer = new ArrayList<>();
+        data = new ArrayList<>();
         period = new SimpleLongProperty(random.nextLong() % 2000 + 3000);
     }
 
@@ -152,17 +158,18 @@ public class SineSignalGenerator {
 
         D.info(SineSignalGenerator.this, "Starting");
 
-        int numOfPoints = (int) Math.ceil((double) getUpdateInterval() / getDelta());
         buffer.clear();
+        data.clear();
         for (int i = 0; i < getNumberOfSeries(); i++) {
-            buffer.add(new ArrayList<>(numOfPoints));
+            buffer.add(new ArrayList<>());
+            data.add(new ArrayList<>());
         }
         dataIdx = bufferIdx = 0;
 
-        generateExecutor = Executors.newSingleThreadScheduledExecutor(daemonFactory);
+        generateExecutor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
         generateExecutor.scheduleWithFixedDelay(this::generate, 0, getDelta(), TimeUnit.MILLISECONDS);
 
-        updateExecutor = Executors.newSingleThreadScheduledExecutor(daemonFactory);
+        updateExecutor = Executors.newSingleThreadScheduledExecutor(DaemonThreadFactory.INSTANCE);
         updateExecutor.scheduleWithFixedDelay(this::update, getUpdateInterval(), getUpdateInterval(), TimeUnit.MILLISECONDS);
 
         setRunning(true);
@@ -204,17 +211,18 @@ public class SineSignalGenerator {
     }
 
     private synchronized void update() {
+        // Might happen that there's nothing to add (updateInterval < delta)
         int numberOfPoints = buffer.get(0).size();
-        if(numberOfPoints == 0) return;
+        if (numberOfPoints == 0) return;
 
-        data = new double[getNumberOfSeries()][numberOfPoints];
         for (int i = 0; i < getNumberOfSeries(); i++) {
-            final List<Double> seriesData = buffer.get(i);
-            for (int j = 0; j < numberOfPoints; j++) {
-                data[i][j] = seriesData.get(j);
-            }
-            seriesData.clear();
+            final List<Double> bufferSeries = buffer.get(i);
+            final List<Double> dataSeries = data.get(i);
+            dataSeries.clear();
+            dataSeries.addAll(bufferSeries);
+            bufferSeries.clear();
         }
+
         //D.info(SineSignalGenerator.this, "Update triggered, ready: " + getNumberOfSeries() + " series, each: " + data[0].length + " points");
         bufferIdx = 0;
 
@@ -223,8 +231,5 @@ public class SineSignalGenerator {
         setDataReady(false);
     }
 
-    private double noise() {
-        return random.nextDouble();
-    }
 
 }

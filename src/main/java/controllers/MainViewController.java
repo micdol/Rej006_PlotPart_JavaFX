@@ -7,12 +7,14 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ProgressBar;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import model.CursorModel;
 import plot.BufferModeModel;
 import plot.ExtendedLineChart;
@@ -20,6 +22,7 @@ import plot.PlotMode;
 import util.CursorManager;
 import util.D;
 import util.SineSignalGenerator;
+import util.listeners.PlotModelChangeListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,47 +31,74 @@ import java.util.stream.Collectors;
 
 public class MainViewController {
 
+    // region FXML Controls
+
     @FXML
     private BorderPane root;
 
     @FXML
-    private VBox vbCursors;
+    private Button btnStart;
 
     @FXML
-    private ProgressBar prgBufferFill;
+    private Button btnStop;
+
+    @FXML
+    private Button btnResetZoom;
+
+    @FXML
+    private Button btnResetData;
 
     @FXML
     private ComboBox<PlotMode> cbPlotMode;
 
     @FXML
+    private VBox vbCursors;
+
+    @FXML
     private ExtendedLineChart chart;
+
+    // endregion FXML Controls
 
     /**
      * Cursors currently visible in the view
      */
     private final List<CursorViewController> cursors;
-
     private final List<SineSignalGenerator> generators;
+    private final ProgressBar prgComboFill;
 
     public MainViewController() {
         cursors = new ArrayList<>();
         generators = new ArrayList<>();
+        prgComboFill = new ProgressBar(0.5);
     }
 
     @FXML
     void initialize() {
         D.info(MainViewController.this, "Initializing");
 
-        cbPlotMode.getItems().setAll(PlotMode.values());
-        cbPlotMode.getSelectionModel().select(chart.getPlotMode());
-        chart.plotModeProperty().bind(cbPlotMode.getSelectionModel().selectedItemProperty());
-        chart.plotModelProperty().addListener((o, ov, nv) -> {
-            if (nv instanceof BufferModeModel) {
-                prgBufferFill.progressProperty().bind(((BufferModeModel) nv).bufferFillProperty());
-            } else {
-                prgBufferFill.progressProperty().unbind();
+        cbPlotMode.setButtonCell(new ListCell<PlotMode>() {
+            @Override
+            protected void updateItem(PlotMode item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) return;
+                if (item == PlotMode.BUFFER) {
+                    StackPane sp = new StackPane();
+                    Label label = new Label(item.toString());
+                    label.setTextFill(Color.BLACK);
+                    sp.getChildren().addAll(prgComboFill, label);
+                    setGraphic(sp);
+                } else {
+                    setText(item.toString());
+                    setGraphic(null);
+                }
             }
         });
+        cbPlotMode.getItems().setAll(PlotMode.values());
+        cbPlotMode.getSelectionModel().select(chart.getPlotMode());
+
+
+        chart.plotModeProperty().bind(cbPlotMode.getSelectionModel().selectedItemProperty());
+        chart.plotModelProperty().addListener(new PlotModelChangeListener(prgComboFill));
         chart.setPlotModel(new BufferModeModel(chart));
 
         // Monitor available cursors for deletion

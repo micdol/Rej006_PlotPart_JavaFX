@@ -24,7 +24,6 @@
                 <Button fx:id="btnResetZoom" mnemonicParsing="false" onAction="#onResetZoomClicked" text="Reset zoom"/>
                 <Button fx:id="btnResetData" mnemonicParsing="false" onAction="#onResetDataClicked" text="Reset data"/>
                 <ComboBox fx:id="cbPlotMode" prefWidth="150.0"/>
-                <ProgressBar fx:id="prgBufferFill" progress="0"/>
 
             </children>
         </HBox>
