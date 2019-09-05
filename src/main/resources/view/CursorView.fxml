@@ -12,7 +12,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 
 <TitledPane fx:id="tpRoot" alignment="CENTER_RIGHT" animated="false" contentDisplay="RIGHT" graphicTextGap="10.0"
-            maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308"
+            maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="144"
             stylesheets="@../style/cursor-view-style.css" text="Nazwa" xmlns="http://javafx.com/javafx/8.0.121"
             xmlns:fx="http://javafx.com/fxml/1" fx:controller="controllers.CursorViewController">
     <content>

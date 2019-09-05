@@ -29,7 +29,7 @@
         </HBox>
     </top>
     <right>
-        <VBox fx:id="vbCursors" maxWidth="1.7976931348623157E308" minWidth="144.0" spacing="5.0"
+        <VBox fx:id="vbCursors" maxWidth="1.7976931348623157E308" minWidth="196.0" spacing="5.0"
               BorderPane.alignment="CENTER">
             <BorderPane.margin>
                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>

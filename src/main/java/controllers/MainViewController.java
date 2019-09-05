@@ -1,13 +1,11 @@
 package controllers;
 
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
@@ -16,11 +14,11 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import model.CursorModel;
-import plot.BufferModeModel;
-import plot.ExtendedLineChart;
-import plot.PlotMode;
+import plot.*;
+import plot.models.*;
 import util.CursorManager;
 import util.D;
+import util.ProgressListCell;
 import util.SineSignalGenerator;
 import util.listeners.PlotModelChangeListener;
 
@@ -63,61 +61,50 @@ public class MainViewController {
      * Cursors currently visible in the view
      */
     private final List<CursorViewController> cursors;
-    private final List<SineSignalGenerator> generators;
+    private final SineSignalGenerator generator;
     private final ProgressBar prgComboFill;
 
     public MainViewController() {
         cursors = new ArrayList<>();
-        generators = new ArrayList<>();
-        prgComboFill = new ProgressBar(0.5);
+        generator = new SineSignalGenerator();
+        prgComboFill = new ProgressBar(0.0);
     }
 
     @FXML
     void initialize() {
         D.info(MainViewController.this, "Initializing");
 
-        cbPlotMode.setButtonCell(new ListCell<PlotMode>() {
-            @Override
-            protected void updateItem(PlotMode item, boolean empty) {
-                super.updateItem(item, empty);
-                if (item == null || empty) return;
-                if (item == PlotMode.BUFFER) {
-                    StackPane sp = new StackPane();
-                    Label label = new Label(item.toString());
-                    label.setTextFill(Color.BLACK);
-                    sp.getChildren().addAll(prgComboFill, label);
-                    setGraphic(sp);
-                } else {
-                    setText(item.toString());
-                    setGraphic(null);
+        cbPlotMode.setButtonCell(new ProgressListCell(prgComboFill));
+        cbPlotMode.getItems().setAll(PlotMode.values());
+        cbPlotMode.getSelectionModel().selectedItemProperty().addListener((o, ov, nv) -> {
+            prgComboFill.progressProperty().unbind();
+            PlotModeModelBase tmp = null;
+            if (nv == PlotMode.BUFFER) {
+                tmp = new BufferModeModel(chart);
+                prgComboFill.progressProperty().bind(((BufferModeModel) tmp).bufferFillProperty());
+            }
+            if (nv == PlotMode.CURSOR) tmp = new CursorModeModel(chart);
+            if (nv == PlotMode.SCREEN) tmp = new ScreenModeModel(chart);
+            if (nv == PlotMode.FREE) tmp = new FreeModeModel(chart, ov != null);
+            final PlotModeModelBase model = tmp;
+            model.setDelta(generator.getDelta() / 1000.0);
+            chart.setPlotModel(model);
+        });
+        cbPlotMode.getSelectionModel().select(PlotMode.FREE);
+
+        // Monitor available cursors for deletion
+        CursorManager.getInstance().unmodifiableCursorPool().addListener((ListChangeListener<? super CursorModel>) change -> {
+            while (change.next()) {
+                if (change.wasRemoved()) {
+                    D.info(MainViewController.this, "Cursors: [" + change.getRemoved().stream().map(c -> ((CursorModel) c).getName()).collect(Collectors.joining(",")) + "] were removed");
+                    cursors.stream()
+                            .filter(ctrl -> change.getRemoved().contains(ctrl.getData()))
+                            .forEach(ctrl -> vbCursors.getChildren().remove(ctrl.getViewRoot()));
                 }
             }
         });
-        cbPlotMode.getItems().setAll(PlotMode.values());
-        cbPlotMode.getSelectionModel().select(chart.getPlotMode());
-
-
-        chart.plotModeProperty().bind(cbPlotMode.getSelectionModel().selectedItemProperty());
-        chart.plotModelProperty().addListener(new PlotModelChangeListener(prgComboFill));
-        chart.setPlotModel(new BufferModeModel(chart));
-
-        // Monitor available cursors for deletion
-        CursorManager.getInstance()
-                .unmodifiableCursorPool()
-                .addListener((ListChangeListener<? super CursorModel>) change -> {
-                    while (change.next()) {
-                        if (change.wasRemoved()) {
-                            D.info(MainViewController.this, "Cursors: [" + change.getRemoved().stream().map(c -> ((CursorModel) c).getName()).collect(Collectors.joining(",")) + "] were removed");
-                            cursors.stream()
-                                    .filter(ctrl -> change.getRemoved().contains(ctrl.getData()))
-                                    .forEach(ctrl -> vbCursors.getChildren().remove(ctrl.getViewRoot()));
-                        }
-                    }
-                });
 
         // Data generation
-        SineSignalGenerator generator = new SineSignalGenerator();
-
         generator.deltaProperty().addListener((o, ov, nv) -> chart.getPlotModel().setDelta(nv.doubleValue() / 1000.0));
         generator.numberOfSeriesProperty().addListener((o, ov, nv) -> {
             final ObservableList<XYChart.Series<Number, Number>> chartSeries = chart.getData();
@@ -126,31 +113,25 @@ public class MainViewController {
                 chartSeries.add(new XYChart.Series<>());
             }
         });
-
-        generator.setDelta(21);
-        generator.setUpdateInterval(37);
-        generator.setNumberOfSeries(5);
-        generator.setPeriod(1337);
+        generator.setDelta(200);
+        generator.setUpdateInterval(40);
+        generator.setNumberOfSeries(6);
+        generator.setPeriod(3215);
         generator.dataReadyProperty().addListener((o, wasReady, isReady) -> {
             if (isReady) {
                 Platform.runLater(() -> chart.getPlotModel().addData(generator.getData()));
             }
         });
-        generators.add(generator);
-
 
         Platform.runLater(() -> onResetZoomClicked(null));
         D.info(MainViewController.this, "Initialized");
     }
 
-
     @FXML
     void onAddClicked(ActionEvent e) {
         CursorModel cursorModel = new CursorModel();
-        D.info(MainViewController.this, "Adding new cursor: " + cursorModel);
-
+        D.info(MainViewController.this, "Adding cursor: " + cursorModel);
         CursorManager.getInstance().register(cursorModel);
-
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/CursorView.fxml"));
         try {
             Parent root = loader.load();
@@ -159,6 +140,7 @@ public class MainViewController {
             vbCursors.getChildren().add(root);
             cursors.add(controller);
             chart.addCursor(cursorModel);
+            D.info(MainViewController.this, "Added cursor: " + cursorModel);
         } catch (IOException ex) {
             D.error(MainViewController.this, "Failed loading CursorView: " + ex);
             ex.printStackTrace();
@@ -167,19 +149,24 @@ public class MainViewController {
 
     @FXML
     void onStartClicked(ActionEvent e) {
-        generators.forEach(SineSignalGenerator::start);
+        generator.start();
     }
 
     @FXML
     void onStopClicked(ActionEvent e) {
-        generators.forEach(SineSignalGenerator::stop);
+        generator.stop();
+        cbPlotMode.getSelectionModel().select(PlotMode.FREE);
     }
 
+    @FXML
     public void onResetZoomClicked(ActionEvent event) {
         chart.getXAxis().resetZoom();
         chart.getYAxis().resetZoom();
     }
+
+    @FXML
     public void onResetDataClicked(ActionEvent event) {
         chart.getPlotModel().reset();
+        generator.reset();
     }
 }

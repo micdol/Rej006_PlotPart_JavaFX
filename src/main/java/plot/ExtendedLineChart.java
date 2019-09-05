@@ -3,6 +3,7 @@ package plot;
 import controllers.CursorPlotController;
 import javafx.application.Platform;
 import javafx.beans.NamedArg;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.collections.ListChangeListener;
 import javafx.scene.Cursor;
@@ -13,8 +14,10 @@ import javafx.scene.chart.ValueAxis;
 import javafx.scene.image.Image;
 import javafx.scene.input.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
 import model.CursorModel;
+import plot.models.CursorModeModel;
+import plot.models.PlotModeModelBase;
 import util.CursorManager;
 import util.D;
 
@@ -149,7 +152,14 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
     }
     public void setPlotModel(PlotModeModelBase plotModel) {
         this.plotModel.set(plotModel);
+        cursorModeLine.setVisible(plotModel instanceof CursorModeModel);
     }
+
+    // endregion
+
+    // region PoC
+
+    private final Line cursorModeLine = new Line(0, 0, 0, 2000);
 
     // endregion
 
@@ -168,13 +178,28 @@ public class ExtendedLineChart extends LineChart<Number, Number> {
         plotMode = new SimpleObjectProperty<>(PlotMode.BUFFER);
         plotModel = new SimpleObjectProperty<>(null);
 
+        getPlotChildren().add(cursorModeLine);
+        cursorModeLine.setVisible(true);
+        cursorModeLine.setStrokeWidth(2);
+        cursorModeLine.endXProperty().bind(cursorModeLine.startXProperty());
+        plotModel.addListener((o,ov,nv) -> {
+            if(nv instanceof CursorModeModel) {
+                cursorModeLine.startXProperty().bind(Bindings.createDoubleBinding(() -> {
+                    cursorModeLine.toFront();
+                    return getXAxis().getDisplayPosition(((CursorModeModel) nv).getCursorPosition());
+                }, nv.nextXProperty()));
+            }
+            else {
+                cursorModeLine.startXProperty().unbind();
+            }
+        });
         setAnimated(false);
         setLegendVisible(false);
 
         xAxis.setMinorTickVisible(false);
         xAxis.setAnimated(false);
         xAxis.setAutoRanging(false);
-        xAxis.setUpperBound(5);
+        xAxis.setUpperBound(3);
 
         yAxis.setMinorTickVisible(false);
         yAxis.setAnimated(false);

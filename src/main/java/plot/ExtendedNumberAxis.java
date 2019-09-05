@@ -1,6 +1,7 @@
 package plot;
 
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.scene.chart.ValueAxis;
 import javafx.scene.input.MouseButton;
@@ -30,9 +31,11 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
 
     private final DoubleProperty zoomScale;
     private final BooleanProperty zoomEnable;
+    private final BooleanProperty zooming;
     private final BooleanProperty panEnable;
     private final ObjectProperty<MouseButton> panMouseButton;
     private final BooleanProperty panning;
+    private final DoubleProperty span;
 
     // region Properties
 
@@ -41,6 +44,9 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
     }
     public BooleanProperty zoomEnableProperty() {
         return zoomEnable;
+    }
+    public ReadOnlyBooleanProperty zoomingProperty() {
+        return zooming;
     }
     public BooleanProperty panEnableProperty() {
         return panEnable;
@@ -51,12 +57,18 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
     public ReadOnlyBooleanProperty panningProperty() {
         return panning;
     }
+    public ReadOnlyDoubleProperty spanProperty() {
+        return span;
+    }
 
     public double getZoomScale() {
         return zoomScale.get();
     }
     public boolean isZoomEnable() {
         return zoomEnable.get();
+    }
+    public boolean isZooming() {
+        return zooming.get();
     }
     public boolean isPanEnable() {
         return panEnable.get();
@@ -67,12 +79,18 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
     public boolean isPanning() {
         return panning.get();
     }
+    public double getSpan() {
+        return span.get();
+    }
 
     public void setZoomScale(double value) {
         this.zoomScale.set(value);
     }
     public void setZoomEnable(boolean zoomEnable) {
         this.zoomEnable.set(zoomEnable);
+    }
+    public void setZooming(boolean zooming) {
+        this.zooming.set(zooming);
     }
     public void setPanEnable(boolean panEnable) {
         this.panEnable.set(panEnable);
@@ -84,15 +102,21 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
     private void setPanning(boolean panning) {
         this.panning.set(panning);
     }
-
+    protected void setSpan(double span) {
+        this.span.set(span);
+    }
     // endregion
 
     public ExtendedNumberAxis() {
         zoomScale = new SimpleDoubleProperty(0.9);
         zoomEnable = new SimpleBooleanProperty(true);
+        zooming = new SimpleBooleanProperty(false);
         panEnable = new SimpleBooleanProperty(true);
         panMouseButton = new SimpleObjectProperty<>(MouseButton.MIDDLE);
         panning = new SimpleBooleanProperty(false);
+        span = new SimpleDoubleProperty(getUpperBound() - getLowerBound());
+        lowerBoundProperty().addListener((o,ov,nv)->setSpan(getUpperBound() - nv.doubleValue()));
+        upperBoundProperty().addListener((o,ov,nv)->setSpan(nv.doubleValue() -getLowerBound()));
 
         // Don't allow zoom values outside (0,1) range
         zoomScale.addListener((o, ov, nv) -> {
@@ -259,7 +283,9 @@ public class ExtendedNumberAxis extends ValueAxis<Number> {
         }
         double nl = getValueForDisplay(lowerPx).doubleValue();
         double nu = getValueForDisplay(upperPx).doubleValue();
+        setZooming(true);
         setRange(new Range(Math.min(nl, nu), Math.max(nl, nu)), false);
+        setZooming(false);
     }
 
     // endregion

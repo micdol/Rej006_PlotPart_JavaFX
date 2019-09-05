@@ -4,8 +4,8 @@ import com.sun.istack.internal.Nullable;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.ProgressBar;
-import plot.BufferModeModel;
-import plot.PlotModeModelBase;
+import plot.models.BufferModeModel;
+import plot.models.PlotModeModelBase;
 
 public class PlotModelChangeListener implements ChangeListener<PlotModeModelBase> {
 
